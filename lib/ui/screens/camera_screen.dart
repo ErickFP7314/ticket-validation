@@ -6,7 +6,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/scanner_provider.dart';
-import '../widgets/camera_overlay.dart';
+import '../widgets/results_panel.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -38,7 +38,6 @@ class _CameraScreenState extends State<CameraScreen> {
 
     try {
       await _controller!.initialize();
-      // No iniciamos stream constante para ahorrar CPU y por pedido del usuario de botón manual
       setState(() {
         _isCameraInitialized = true;
       });
@@ -88,9 +87,11 @@ class _CameraScreenState extends State<CameraScreen> {
         builder: (context, provider, child) {
           Color backgroundColor = Colors.transparent;
           if (provider.status == ScanStatus.invalid) {
-            backgroundColor = Colors.red.withOpacity(0.6);
+            backgroundColor = Colors.red.withOpacity(0.4);
           } else if (provider.status == ScanStatus.valid) {
-            backgroundColor = Colors.green.withOpacity(0.4);
+            backgroundColor = Colors.green.withOpacity(0.3);
+          } else if (provider.status == ScanStatus.mixed) {
+            backgroundColor = Colors.orange.withOpacity(0.3);
           } else if (provider.status == ScanStatus.scanning) {
             backgroundColor = Colors.blue.withOpacity(0.2);
           }
@@ -104,8 +105,6 @@ class _CameraScreenState extends State<CameraScreen> {
                 color: backgroundColor,
               ),
 
-              const CameraOverlay(),
-
               if (provider.status == ScanStatus.scanning)
                 const Center(child: CircularProgressIndicator(color: Colors.white)),
 
@@ -114,15 +113,12 @@ class _CameraScreenState extends State<CameraScreen> {
                   children: [
                     _buildTopBar(provider),
                     const Spacer(),
-                    if (provider.status == ScanStatus.invalid)
-                      _buildInvalidAlert(provider),
-                    if (provider.status == ScanStatus.valid)
-                      _buildValidAlert(provider),
-                    const Spacer(),
                     _buildBottomControls(),
                   ],
                 ),
               ),
+
+              ResultsPanel(provider: provider),
             ],
           );
         },
@@ -146,64 +142,6 @@ class _CameraScreenState extends State<CameraScreen> {
             backgroundColor: Colors.grey[800],
           );
         }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildInvalidAlert(ScannerProvider provider) {
-    HapticFeedback.vibrate();
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 64),
-          const SizedBox(height: 10),
-          const Text("¡BILLETE INVÁLIDO!", 
-            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 5),
-          Text("Serie detectada: ${provider.lastDetectedSerial}",
-            style: const TextStyle(color: Colors.white70, fontSize: 18)),
-          Text("Rango: ${provider.matchedRange?.rangeString}",
-            style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => provider.clearResults(),
-            child: const Text("ENTENDIDO / ESCANEAR OTRO"),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildValidAlert(ScannerProvider provider) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.check_circle_outline, color: Colors.white, size: 48),
-          const SizedBox(height: 10),
-          const Text("BILLETE VÁLIDO", 
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 5),
-          Text("Serie: ${provider.lastDetectedSerial}", style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () => provider.clearResults(),
-            child: const Text("CERRAR", style: TextStyle(color: Colors.white)),
-          )
-        ],
       ),
     );
   }
@@ -240,7 +178,7 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
           const SizedBox(height: 10),
           TextButton.icon(
-            onPressed: _showManualEntry,
+            onPressed: () => _showManualEntry(context),
             icon: const Icon(Icons.keyboard, color: Colors.white70),
             label: const Text("Introducir número manualmente", style: TextStyle(color: Colors.white70)),
           ),
@@ -249,43 +187,10 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
-  void _showManualEntry() {
-    final controller = TextEditingController();
+  void _showManualEntry(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Validación Manual"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Ingresa los 7 u 8 dígitos del número de serie."),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: "Número de Serie",
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                final provider = Provider.of<ScannerProvider>(this.context, listen: false);
-                provider.validateManual(controller.text);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("VERIFICAR"),
-          ),
-        ],
-      ),
+      builder: (context) => const ManualEntryDialog(),
     );
   }
 
@@ -301,6 +206,89 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void dispose() {
     _controller?.dispose();
+    super.dispose();
+  }
+}
+
+class ManualEntryDialog extends StatefulWidget {
+  const ManualEntryDialog({super.key});
+
+  @override
+  State<ManualEntryDialog> createState() => _ManualEntryDialogState();
+}
+
+class _ManualEntryDialogState extends State<ManualEntryDialog> {
+  final _controller = TextEditingController();
+  bool _isSeriesB = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final text = _controller.text.trim().toUpperCase();
+      setState(() {
+        _isSeriesB = text.endsWith('B');
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Validación Manual"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Formato: [8-9 dígitos] + [Serie]"),
+          const Text("(Ej: 06736385 B)", style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              labelText: "Número de Serie",
+              border: const OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: _isSeriesB ? Colors.blue : Colors.grey,
+                  width: _isSeriesB ? 2 : 1,
+                ),
+              ),
+              suffixIcon: _isSeriesB 
+                ? const Icon(Icons.verified_user, color: Colors.blue) 
+                : const Icon(Icons.info_outline),
+              helperText: _isSeriesB 
+                ? "Validando rangos de Serie B..." 
+                : "Series A, C, D... son siempre válidas.",
+              helperStyle: TextStyle(
+                color: _isSeriesB ? Colors.blue : Colors.grey,
+                fontWeight: _isSeriesB ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+        ElevatedButton(
+          onPressed: () {
+            if (_controller.text.isNotEmpty) {
+              final provider = Provider.of<ScannerProvider>(context, listen: false);
+              provider.validateManual(_controller.text);
+              Navigator.pop(context);
+            }
+          },
+          child: const Text("VERIFICAR"),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
     super.dispose();
   }
 }

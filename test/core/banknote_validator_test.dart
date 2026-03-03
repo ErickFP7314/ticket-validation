@@ -1,40 +1,59 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/core/utils/banknote_validator.dart';
+import 'package:numero_serie_billetes_b/core/utils/banknote_validator.dart';
+import 'package:numero_serie_billetes_b/models/scan_result.dart';
 
 void main() {
-  group('BanknoteValidator - Serie B Bolivia', () {
-    test('Should detect invalid 10 Bs serial (within range)', () {
-      final result = BanknoteValidator.findInvalidRange(10, '77100005 B');
-      expect(result, isNotNull);
-      expect(result!.from, 77100001);
+  group('BanknoteValidator V2 Tests', () {
+    test('Should extract multiple valid serials and letters', () {
+      const text = "Detected: 77100005B and also 12345678A";
+      final results = BanknoteValidator.extractResults(10, text);
+
+      expect(results.length, 2);
+      
+      // First is Serie B (Invalid for 10Bs in that range)
+      expect(results[0].serialDigits, "77100005");
+      expect(results[0].seriesLetter, "B");
+      expect(results[0].isValid, false);
+
+      // Second is Serie A (Always valid)
+      expect(results[1].serialDigits, "12345678");
+      expect(results[1].seriesLetter, "A");
+      expect(results[1].isValid, true);
     });
 
-    test('Should detect valid 10 Bs serial (outside ranges)', () {
-      final result = BanknoteValidator.findInvalidRange(10, '00000001 B');
-      expect(result, isNull);
+    test('Should handle optional space between digits and letter', () {
+      const text = "77100005 B";
+      final results = BanknoteValidator.extractResults(10, text);
+
+      expect(results.length, 1);
+      expect(results[0].seriesLetter, "B");
+      expect(results[0].isValid, false);
     });
 
-    test('Should detect invalid 20 Bs serial (within range)', () {
-      final result = BanknoteValidator.findInvalidRange(20, '87280150');
-      expect(result, isNotNull);
-      expect(result!.from, 87280145);
+    test('Should ignore numbers without letters (anti-false positive)', () {
+      const text = "Calendar 2024 or year 12345678";
+      final results = BanknoteValidator.extractResults(10, text);
+
+      expect(results.isEmpty, true);
     });
 
-    test('Should detect invalid 50 Bs serial (within range)', () {
-      final result = BanknoteValidator.findInvalidRange(50, 'SERIE 76310020B');
-      expect(result, isNotNull);
-      expect(result!.from, 76310012);
+    test('Should handle 9 digits serials', () {
+      const text = "104900005 B"; // Invalid range for 10Bs (104900001 - 105350000)
+      final results = BanknoteValidator.extractResults(10, text);
+
+      expect(results.length, 1);
+      expect(results[0].serialDigits, "104900005");
+      expect(results[0].isValid, false);
     });
 
-    test('Should clean text correctly', () {
-      expect(BanknoteValidator.cleanSerial('00784500 B'), '00784500');
-      expect(BanknoteValidator.cleanSerial('SERIE 123456789'), '123456789');
-      expect(BanknoteValidator.cleanSerial('a1b2c3d4e5f6g7'), '1234567');
-    });
+    test('Should mark any series other than B as valid', () {
+      // 77100005 is invalid ONLY for Serie B
+      const text = "77100005 C"; 
+      final results = BanknoteValidator.extractResults(10, text);
 
-    test('Should return null for invalid length', () {
-      expect(BanknoteValidator.cleanSerial('123'), isNull);
-      expect(BanknoteValidator.cleanSerial('12345678901'), isNull);
+      expect(results.length, 1);
+      expect(results[0].seriesLetter, "C");
+      expect(results[0].isValid, true);
     });
   });
 }

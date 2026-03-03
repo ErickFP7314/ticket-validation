@@ -2,115 +2,89 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../core/utils/banknote_validator.dart';
-import '../models/banknote_range.dart';
+import '../models/scan_result.dart';
 
-enum ScanStatus { idle, scanning, valid, invalid }
+enum ScanStatus { idle, scanning, valid, invalid, mixed }
 
 class ScannerProvider with ChangeNotifier {
-  final TextRecognizer _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  final TextRecognizer _textRecognizer = TextRecognizer();
   
   ScanStatus _status = ScanStatus.idle;
-  ScanStatus get status => _status;
-
-  String? _lastDetectedSerial;
-  String? get lastDetectedSerial => _lastDetectedSerial;
-
-  BanknoteRange? _matchedRange;
-  BanknoteRange? get matchedRange => _matchedRange;
-
   int _selectedDenomination = 10;
-  int get selectedDenomination => _selectedDenomination;
-
-  // Buffer de confianza: Mapa de <Serial, Cantidad de detecciones>
-  final Map<String, int> _confidenceBuffer = {};
-  static const int _requiredConfidence = 3;
-
+  List<ScanResult> _results = [];
   bool _isProcessing = false;
 
-  void setDenomination(int value) {
-    _selectedDenomination = value;
-    clearResults();
+  ScanStatus get status => _status;
+  int get selectedDenomination => _selectedDenomination;
+  List<ScanResult> get results => _results;
+  bool get isProcessing => _isProcessing;
+
+  void setDenomination(int den) {
+    _selectedDenomination = den;
     notifyListeners();
   }
 
   void clearResults() {
+    _results = [];
     _status = ScanStatus.idle;
-    _lastDetectedSerial = null;
-    _matchedRange = null;
-    _confidenceBuffer.clear();
     notifyListeners();
   }
 
   Future<void> scanFromImage(String path) async {
     _status = ScanStatus.scanning;
+    _results = [];
     notifyListeners();
 
     final inputImage = InputImage.fromFilePath(path);
-    await processImage(inputImage, isManualTrigger: true);
+    await processImage(inputImage);
   }
 
   void validateManual(String serialText) {
-    _lastDetectedSerial = serialText;
-    _matchedRange = BanknoteValidator.findInvalidRange(_selectedDenomination, serialText);
+    // Para entrada manual, extraemos resultados del texto ingresado
+    _results = BanknoteValidator.extractResults(_selectedDenomination, serialText);
     
-    if (_matchedRange != null) {
-      _status = ScanStatus.invalid;
-    } else {
-      _status = ScanStatus.valid;
-    }
+    _updateStatusFromResults();
     notifyListeners();
   }
 
-  Future<void> processImage(InputImage inputImage, {bool isManualTrigger = false}) async {
-    if (_isProcessing || (_status == ScanStatus.invalid && !isManualTrigger)) return;
+  Future<void> processImage(InputImage inputImage) async {
+    if (_isProcessing) return;
 
     _isProcessing = true;
-    if (isManualTrigger) {
-      _status = ScanStatus.scanning;
-      notifyListeners();
-    }
+    _status = ScanStatus.scanning;
+    notifyListeners();
     
     try {
       final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
       
-      String? foundSerial;
+      // Extraemos todos los resultados posibles del texto completo
+      _results = BanknoteValidator.extractResults(_selectedDenomination, recognizedText.text);
       
-      for (TextBlock block in recognizedText.blocks) {
-        for (TextLine line in block.lines) {
-          final clean = BanknoteValidator.cleanSerial(line.text);
-          if (clean != null) {
-            foundSerial = clean;
-            break;
-          }
-        }
-        if (foundSerial != null) break;
-      }
-
-      if (foundSerial != null) {
-        if (isManualTrigger) {
-          // Si es manual, no requiere buffer de 3 frames
-          validateManual(foundSerial);
-        } else {
-          _handleDetection(foundSerial);
-        }
-      } else if (isManualTrigger) {
-        _status = ScanStatus.idle;
-        notifyListeners();
-      }
+      _updateStatusFromResults();
     } catch (e) {
       debugPrint("Error processing image: $e");
-      if (isManualTrigger) _status = ScanStatus.idle;
+      _status = ScanStatus.idle;
     } finally {
       _isProcessing = false;
+      notifyListeners();
     }
   }
 
-  void _handleDetection(String serial) {
-    _confidenceBuffer[serial] = (_confidenceBuffer[serial] ?? 0) + 1;
+  void _updateStatusFromResults() {
+    if (_results.isEmpty) {
+      _status = ScanStatus.idle;
+      return;
+    }
 
-    if (_confidenceBuffer[serial]! >= _requiredConfidence) {
-      validateManual(serial);
-      _confidenceBuffer.clear();
+    final hasInvalid = _results.any((r) => !r.isValid);
+    final hasValid = _results.any((r) => r.isValid);
+
+    if (hasInvalid && hasValid) {
+      _status = ScanStatus.mixed;
+    } else if (hasInvalid) {
+      _status = ScanStatus.invalid;
+    } else {
+      _status = ScanStatus.valid;
     }
   }
 
