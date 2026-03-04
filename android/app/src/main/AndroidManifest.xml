@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <application
-        android:label="numero_serie_billetes_b"
+        android:label="Villete"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
