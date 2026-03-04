@@ -1,0 +1,164 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Paquetes Básicos ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, es-tabla]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage[hidelinks]{hyperref} % hidelinks para que no salgan cuadros rojos o verdes
+
+% --- Tipografía (Arial Style) ---
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% --- Colores Personalizados ---
+\definecolor{primaryDark}{HTML}{4A148C} % Morado Billete
+\definecolor{accentColor}{HTML}{7B1FA2}
+\definecolor{safeGreen}{HTML}{2E7D32}
+\definecolor{warningOrange}{HTML}{E65100}
+\definecolor{linkBlue}{HTML}{1A73E8} % Azul Google oficial para enlaces
+\definecolor{patreonOrange}{HTML}{F96854}
+
+% --- Estilo de Títulos ---
+\titleformat{\section}{\color{primaryDark}\normalfont\Large\bfseries}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}{\color{accentColor}\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% --- Configuración de Cajas para Capturas ---
+\newtcolorbox{screenshotbox}[1]{
+    colback=white,
+    colframe=gray!20,
+    width=\textwidth,
+    height=6cm,
+    valign=center,
+    halign=center,
+    title=\textit{#1},
+    coltitle=gray!70,
+    fonttitle=\small\itshape,
+    attach title to upper,
+    after title={\par\medskip}
+}
+
+% --- Caja Estilo Botón para Descarga ---
+\newtcolorbox{downloadbutton}{
+    colback=primaryDark,
+    colframe=primaryDark,
+    arc=5pt,
+    boxrule=0.5pt,
+    width=0.8\textwidth,
+    halign=center,
+    valign=center,
+    fontupper=\color{white}\bfseries\large,
+    top=10pt, bottom=10pt
+}
+
+\begin{document}
+
+% --- Encabezado / Portada ---
+\begin{center}
+    \vspace*{1cm}
+    {\Huge \textbf{\color{primaryDark} Guía de Instalación}} \\[0.3cm]
+    {\huge \textbf{Aplicación Villete}} \\[0.5cm]
+    \textcolor{gray}{\rule{0.5\textwidth}{0.5pt}} \\[1cm]
+\end{center}
+
+\section*{Introducción}
+¡Hola! Si has llegado aquí es porque vas a probar \textbf{Villete}, el verificador de billetes de la Serie B.
+
+Debido a que esta aplicación se instala directamente (fuera de la Google Play Store) \textbf{debido a que quisimos compartirla lo más rápido posible a la población boliviana que la necesita \textit{"YA"}}, tu teléfono Android mostrará algunos avisos de seguridad. 
+
+\begin{tcolorbox}[colback=safeGreen!5, colframe=safeGreen, title=\textbf{Nota de Seguridad}]
+    \textbf{No te preocupes, la aplicación es 100\% segura.} Estos avisos son automáticos para cualquier aplicación que se descarga directamente de la tienda oficial.
+\end{tcolorbox}
+
+\newpage
+
+\section*{Pasos para la Instalación}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=1.5cm, itemsep=2em]
+    
+    \item \textbf{Descarga el Archivo APK} \\
+    Toca el enlace azul de arriba o el botón al final de este documento para descargar el instalador: \\
+    \href{https://github.com/ErickFP7314/ticket-validation/releases/latest/download/app-release.apk}{\textbf{\color{linkBlue}{[CLICK AQUÍ PARA DESCARGAR EL APK]}}}
+    
+    \begin{screenshotbox}{Coloque aquí captura de pantalla: El enlace de descarga en el navegador}
+    \end{screenshotbox}
+
+    \item \textbf{Permitir Instalación de Fuentes Desconocidas} \\
+    Si el teléfono te pregunta si deseas permitir la instalación desde esta fuente (Navegador), selecciona \textbf{"Configurar"} o \textbf{"Permitir"}.
+    
+    \begin{screenshotbox}{Coloque aquí captura de pantalla: Diálogo de permitir fuentes desconocidas}
+    \end{screenshotbox}
+
+    \item \textbf{Aviso de Google Play Protect} \\
+    Aparecerá un cuadro advirtiendo que el desarrollador es desconocido. \\
+    \textbf{SIGUE ESTOS PASOS:}
+    \begin{itemize}[label=\textcolor{warningOrange}{$\rightarrow$}]
+        \item Toca en el texto azul que dice \textbf{"Más detalles"} (o en la pequeña flecha hacia abajo).
+        \item Se desplegará una opción oculta: Toca el botón \textbf{"Instalar de todas formas"}.
+    \end{itemize}
+    
+    \begin{screenshotbox}{Coloque aquí captura de pantalla: Diálogo de Play Protect expandido}
+    \end{screenshotbox}
+
+    \item \textbf{¡Listo para escanear!} \\
+    Una vez instalada, búscala en tu menú con el icono del billete morado.
+\end{enumerate}
+
+\vspace{2cm}
+
+\begin{center}
+    \section*{¿Listo para empezar?}
+    \vspace{0.5cm}
+    \begin{downloadbutton}
+        \href{https://github.com/ErickFP7314/ticket-validation/releases/latest/download/app-release.apk}{DESCARGAR APLICACIÓN VILLETE}
+    \end{downloadbutton}
+    \vspace{0.5cm}
+    \textcolor{gray}{\small Al hacer clic, se descargará el archivo .apk directamente en tu teléfono.}
+\end{center}
+
+\newpage
+
+\section*{Preguntas Frecuentes}
+
+\subsection*{¿Qué permisos requiere la aplicación?}
+Para tu total tranquilidad, \textbf{Villete} solo solicita un permiso:
+\begin{itemize}
+    \item \textbf{Cámara:} Estrictamente necesario para "leer" y reconocer el número de serie de los billetes bolivianos.
+\end{itemize}
+\textbf{Importante:} La app \textbf{NO} tiene acceso a tus contactos, tus fotos privadas, tu ubicación ni utiliza internet.
+
+\section*{Diferenciación Profesional}
+A diferencia de otras aplicaciones similares, \textbf{Villete} está diseñada para entornos de alto tráfico de efectivo. Nuestra tecnología permite:
+\begin{enumerate}
+    \item \textbf{Escaneo Múltiple:} Puede reconocer y validar \textbf{varios billetes al mismo tiempo} simplemente pasando la cámara sobre ellos.
+    \item \textbf{Procesamiento Local:} No depende de internet para validar, lo que garantiza velocidad instantánea en cajas o puntos de venta.
+\end{enumerate}
+
+\vspace*{1.5cm}
+
+\section*{Licenciamiento Comercial e Institucional}
+El código fuente, la tecnología de reconocimiento y los derechos de explotación de esta aplicación están \textbf{disponibles para la venta o licenciamiento exclusivo} a instituciones financieras, cadenas de supermercados, bancos o empresas comerciales que deseen integrarla en sus procesos oficiales bajo contrato técnico.
+
+Si su institución está interesada en adquirir los derechos de esta herramienta o solicita un desarrollo personalizado, por favor póngase en contacto directamente:
+
+\begin{center}
+    \begin{tcolorbox}[colback=primaryDark!5, colframe=primaryDark, arc=10pt, width=0.7\textwidth, halign=center]
+        \textbf{\large Contacto Comercial:} \\
+        \scalebox{1.5}{\textbf{+591 63710729}} \\
+        \textit{(Consultas de negocios y ventas)}
+    \end{tcolorbox}
+\end{center}
+
+\vspace*{1cm}
+\begin{center}
+    \textcolor{primaryDark}{\rule{0.3\textwidth}{1pt}} \\
+    \textit{"Tecnología boliviana al servicio de la seguridad financiera."} \\
+    \textbf{VILLETE}
+\end{center}
+
+\end{document}

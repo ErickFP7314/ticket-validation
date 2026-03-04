@@ -16,8 +16,8 @@ Una aplicación móvil moderna y eficiente diseñada para verificar la autentici
 | :-----------------------------------------: | :---------------------------------------: | :-------------------------------------------: | :----------------------------------------: |
 | ![alt text](./docs/img/detection-valid.png) | ![alt text](./docs/img/detection-mix.png) | ![alt text](./docs/img/detection-invalid.png) | ![alt text](./docs/img/detection-none.png) |
 
-| Escaneo desde la cámara  | Escaneo desde la galería |     Inserción manual     |
-| :----------------------: | :----------------------: | :----------------------: |
+|         Escaneo desde la cámara         |         Escaneo desde la galería         |            Inserción manual             |
+| :-------------------------------------: | :--------------------------------------: | :-------------------------------------: |
 | ![alt text](./docs/img/scan-camera.png) | ![alt text](./docs/img/scan-gallery.png) | ![alt text](./docs/img/scan-manual.png) |
 
 ---
@@ -82,5 +82,9 @@ flutter test test/core/banknote_validator_test.dart
 ---
 
 ## Créditos
+
+## Instalación 📦
+
+Para instalar la aplicación directamente desde el archivo APK, consulta nuestra [Guía de Instalación (Español)](INSTALLATION_GUIDE.md) para manejar los avisos de seguridad de Android.
 
 Desarrollado con enfoque en la seguridad y usabilidad para el mercado boliviano.

@@ -1,4 +1,4 @@
-package com.example.numero_serie_billetes_b
+package com.erick.villete
 
 import io.flutter.embedding.android.FlutterActivity
 
