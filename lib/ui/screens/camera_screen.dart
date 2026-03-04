@@ -283,7 +283,8 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
     _controller.addListener(() {
       final text = _controller.text.trim().toUpperCase();
       setState(() {
-        _isSeriesB = text.endsWith('B');
+        // Asumimos Serie B si termina en B o si es puramente numérico
+        _isSeriesB = text.endsWith('B') || (text.isNotEmpty && RegExp(r'^\d+$').hasMatch(text));
       });
     });
   }

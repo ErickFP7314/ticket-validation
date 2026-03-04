@@ -65,11 +65,16 @@ void main() {
   });
 
   group('BanknoteValidator - validateSingle (Manual Entry)', () {
-    test('should assume Series B for 7-8 digits only', () {
+    test('should assume Series B for 7-9 digits only', () {
       // 77100005 is in an invalid range for 10Bs Series B (77100001 - 77550000)
       final res1 = BanknoteValidator.validateSingle(10, '77100005');
       expect(res1?.isValid, false);
       expect(res1?.seriesLetter, 'B');
+
+      // 9 digits case (some Series B are 9 digits)
+      final res3 = BanknoteValidator.validateSingle(10, '104900005');
+      expect(res3?.isValid, false); // invalid range 104900001 - 105350000
+      expect(res3?.seriesLetter, 'B');
 
       // A valid number (not in ranges) for 10Bs Series B
       final res2 = BanknoteValidator.validateSingle(10, '99999999');

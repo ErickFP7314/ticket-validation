@@ -34,15 +34,16 @@ class BanknoteValidator {
 
   /// Valida una entrada única (útil para entrada manual)
   static ScanResult? validateSingle(int denomination, String text) {
-    final cleanAlphaNum = text.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toUpperCase();
+    // 1. Limpieza de caracteres no alfanuméricos (espacios, guiones, etc)
+    final clean = text.replaceAll(RegExp(r'[^0-9A-Za-z]'), '').toUpperCase();
     
-    // Caso 1: Solo números (7 u 8 dígitos) -> Asumir Serie B
-    if (RegExp(r'^\d{7,8}$').hasMatch(cleanAlphaNum)) {
-      return _createResult(denomination, cleanAlphaNum, 'B');
+    // 2. Solo números (7, 8 o 9 dígitos) -> Asumir Serie B
+    if (RegExp(r'^\d{7,9}$').hasMatch(clean)) {
+      return _createResult(denomination, clean, 'B');
     }
 
-    // Caso 2: Patrón completo (Dígitos + Letra A o B)
-    final match = RegExp(r'^(\d{7,9})([AB])$').firstMatch(cleanAlphaNum);
+    // 3. Patrón completo (Dígitos + Letra A o B)
+    final match = RegExp(r'^(\d{7,9})([AB])$').firstMatch(clean);
     if (match != null) {
       return _createResult(denomination, match.group(1)!, match.group(2)!);
     }

@@ -54,26 +54,28 @@ class ScannerProvider with ChangeNotifier {
 
   void validateManual(String serialText) {
     _errorMessage = null;
+    final trimmed = serialText.trim();
     
-    // Quitamos espacios y limpiamos para la verificación de longitud
-    final clean = serialText.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toUpperCase();
-    
-    // Primero intentamos validar con la lógica inteligente
-    final result = BanknoteValidator.validateSingle(_selectedDenomination, clean);
+    // Intentamos validar con la lógica inteligente del validador
+    final result = BanknoteValidator.validateSingle(_selectedDenomination, trimmed);
     
     if (result != null) {
       _results = [result];
       _hasProcessed = true;
       _updateStatusFromResults();
     } else {
-      // Si no es un patrón válido, damos un mensaje descriptivo
-      if (clean.length < 7 || clean.length > 10) {
-        _errorMessage = "El código debe contener entre 7 y 8 dígitos (se asumirá Serie B) "
-            "o el formato completo (ej: 12345678 B).";
+      // Falló la validación, determinamos el motivo para el mensaje de error
+      final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+      
+      if (digitsOnly.length < 7) {
+        _errorMessage = "El código es demasiado corto. Debe tener al menos 7 dígitos.";
+      } else if (digitsOnly.length > 9) {
+        _errorMessage = "El código es demasiado largo. No debe exceder los 9 dígitos.";
       } else {
-        _errorMessage = "El formato del código no es válido. Asegúrate de ingresar 7-8 dígitos "
+        _errorMessage = "Formato no reconocido. Ingrese solo los dígitos (se asumirá Serie B) "
             "o el número seguido de la serie (A o B).";
       }
+      
       _results = [];
       _hasProcessed = false;
       _status = ScanStatus.idle;
