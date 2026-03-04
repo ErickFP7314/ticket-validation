@@ -10,13 +10,13 @@ Una aplicación móvil moderna y eficiente diseñada para verificar la autentici
 
 ## Demostración (Screenshots)
 
-|     Escaneo Exitoso      |    Resultados Mixtos     |    Escaneo Invalido    |      Sin Hallazgos       |
-| :----------------------: | :----------------------: | :--------------------: | :----------------------: |
-| ![alt text](image-1.png) | ![alt text](image-2.png) | ![alt text](image.png) | ![alt text](image-3.png) |
+|               Escaneo Exitoso               |             Resultados Mixtos             |               Escaneo Invalido                |               Sin Hallazgos                |
+| :-----------------------------------------: | :---------------------------------------: | :-------------------------------------------: | :----------------------------------------: |
+| ![alt text](./docs/img/detection-valid.png) | ![alt text](./docs/img/detection-mix.png) | ![alt text](./docs/img/detection-invalid.png) | ![alt text](./docs/img/detection-none.png) |
 
 | Escaneo desde la cámara  | Escaneo desde la galería |     Inserción manual     |
 | :----------------------: | :----------------------: | :----------------------: |
-| ![alt text](image-4.png) | ![alt text](image-5.png) | ![alt text](image-6.png) |
+| ![alt text](./docs/img/scan-camera.png) | ![alt text](./docs/img/scan-gallery.png) | ![alt text](./docs/img/scan-manual.png) |
 
 ---
 
