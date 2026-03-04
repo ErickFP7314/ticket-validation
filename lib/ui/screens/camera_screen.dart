@@ -354,7 +354,7 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Código Inválido", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: const Text("Ingrese nuevamente", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
         content: Text(message),
         actions: [
           TextButton(

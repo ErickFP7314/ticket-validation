@@ -55,15 +55,18 @@ class ScannerProvider with ChangeNotifier {
   void validateManual(String serialText) {
     _errorMessage = null;
     
-    final result = BanknoteValidator.validateSingle(_selectedDenomination, serialText);
+    // Quitamos espacios y limpiamos para la verificación de longitud
+    final clean = serialText.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toUpperCase();
+    
+    // Primero intentamos validar con la lógica inteligente
+    final result = BanknoteValidator.validateSingle(_selectedDenomination, clean);
     
     if (result != null) {
       _results = [result];
       _hasProcessed = true;
       _updateStatusFromResults();
     } else {
-      // Si no es un patrón válido, verificamos si es por longitud para dar un mensaje específico
-      final clean = serialText.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '');
+      // Si no es un patrón válido, damos un mensaje descriptivo
       if (clean.length < 7 || clean.length > 10) {
         _errorMessage = "El código debe contener entre 7 y 8 dígitos (se asumirá Serie B) "
             "o el formato completo (ej: 12345678 B).";
