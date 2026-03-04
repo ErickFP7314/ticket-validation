@@ -14,12 +14,14 @@ class ScannerProvider with ChangeNotifier {
   List<ScanResult> _results = [];
   bool _isProcessing = false;
   bool _hasProcessed = false;
+  String? _errorMessage;
 
   ScanStatus get status => _status;
   int get selectedDenomination => _selectedDenomination;
   List<ScanResult> get results => _results;
   bool get isProcessing => _isProcessing;
   bool get hasProcessed => _hasProcessed;
+  String? get errorMessage => _errorMessage;
 
   void setDenomination(int den) {
     _selectedDenomination = den;
@@ -30,6 +32,12 @@ class ScannerProvider with ChangeNotifier {
     _results = [];
     _status = ScanStatus.idle;
     _hasProcessed = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -37,6 +45,7 @@ class ScannerProvider with ChangeNotifier {
     _status = ScanStatus.scanning;
     _results = [];
     _hasProcessed = false;
+    _errorMessage = null;
     notifyListeners();
 
     final inputImage = InputImage.fromFilePath(path);
@@ -44,11 +53,29 @@ class ScannerProvider with ChangeNotifier {
   }
 
   void validateManual(String serialText) {
-    // Para entrada manual, extraemos resultados del texto ingresado
-    _results = BanknoteValidator.extractResults(_selectedDenomination, serialText);
-    _hasProcessed = true;
+    _errorMessage = null;
     
-    _updateStatusFromResults();
+    final result = BanknoteValidator.validateSingle(_selectedDenomination, serialText);
+    
+    if (result != null) {
+      _results = [result];
+      _hasProcessed = true;
+      _updateStatusFromResults();
+    } else {
+      // Si no es un patrón válido, verificamos si es por longitud para dar un mensaje específico
+      final clean = serialText.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '');
+      if (clean.length < 7 || clean.length > 10) {
+        _errorMessage = "El código debe contener entre 7 y 8 dígitos (se asumirá Serie B) "
+            "o el formato completo (ej: 12345678 B).";
+      } else {
+        _errorMessage = "El formato del código no es válido. Asegúrate de ingresar 7-8 dígitos "
+            "o el número seguido de la serie (A o B).";
+      }
+      _results = [];
+      _hasProcessed = false;
+      _status = ScanStatus.idle;
+    }
+    
     notifyListeners();
   }
 

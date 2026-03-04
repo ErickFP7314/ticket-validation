@@ -296,14 +296,17 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Formato: [8-9 dígitos] + [Serie]"),
-          const Text("(Ej: 06736385 B)", style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const Text("Ingresa el número de serie:"),
+          const SizedBox(height: 4),
+          const Text("(7-8 dígitos o con Serie A/B)", style: TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
+            keyboardType: TextInputType.text,
             decoration: InputDecoration(
+              hintText: "Ej: 06736385",
               labelText: "Número de Serie",
               border: const OutlineInputBorder(),
               enabledBorder: OutlineInputBorder(
@@ -314,10 +317,10 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
               ),
               suffixIcon: _isSeriesB 
                 ? const Icon(Icons.verified_user, color: Colors.blue) 
-                : const Icon(Icons.info_outline),
+                : const Icon(Icons.keyboard),
               helperText: _isSeriesB 
-                ? "Validando rangos de Serie B..." 
-                : "Series A, C, D... son siempre válidas.",
+                ? "Asumiendo Serie B (validando rangos)..." 
+                : "Series A... son siempre válidas.",
               helperStyle: TextStyle(
                 color: _isSeriesB ? Colors.blue : Colors.grey,
                 fontWeight: _isSeriesB ? FontWeight.bold : FontWeight.normal,
@@ -330,15 +333,40 @@ class _ManualEntryDialogState extends State<ManualEntryDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
         ElevatedButton(
           onPressed: () {
-            if (_controller.text.isNotEmpty) {
+            if (_controller.text.trim().isNotEmpty) {
               final provider = Provider.of<ScannerProvider>(context, listen: false);
-              provider.validateManual(_controller.text);
-              Navigator.pop(context);
+              provider.validateManual(_controller.text.trim());
+              
+              if (provider.errorMessage != null) {
+                _showErrorDialog(context, provider.errorMessage!);
+              } else {
+                Navigator.pop(context);
+              }
             }
           },
           child: const Text("VERIFICAR"),
         ),
       ],
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Código Inválido", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Cerrar error
+              final provider = Provider.of<ScannerProvider>(context, listen: false);
+              provider.clearError();
+            },
+            child: const Text("REINTENTAR"),
+          ),
+        ],
+      ),
     );
   }
 

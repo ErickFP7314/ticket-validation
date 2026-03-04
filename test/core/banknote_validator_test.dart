@@ -63,4 +63,36 @@ void main() {
       expect(results[0].isValid, true);
     });
   });
+
+  group('BanknoteValidator - validateSingle (Manual Entry)', () {
+    test('should assume Series B for 7-8 digits only', () {
+      // 77100005 is in an invalid range for 10Bs Series B (77100001 - 77550000)
+      final res1 = BanknoteValidator.validateSingle(10, '77100005');
+      expect(res1?.isValid, false);
+      expect(res1?.seriesLetter, 'B');
+
+      // A valid number (not in ranges) for 10Bs Series B
+      final res2 = BanknoteValidator.validateSingle(10, '99999999');
+      expect(res2?.isValid, true);
+      expect(res2?.seriesLetter, 'B');
+    });
+
+    test('should respect explicit Series A', () {
+      final res = BanknoteValidator.validateSingle(10, '77100005 A');
+      expect(res?.isValid, true);
+      expect(res?.seriesLetter, 'A');
+    });
+
+    test('should respect explicit Series B', () {
+      final res = BanknoteValidator.validateSingle(10, '77100005 B');
+      expect(res?.isValid, false);
+      expect(res?.seriesLetter, 'B');
+    });
+
+    test('should return null for invalid length or format', () {
+      expect(BanknoteValidator.validateSingle(10, '123'), null);
+      expect(BanknoteValidator.validateSingle(10, '1234567890'), null);
+      expect(BanknoteValidator.validateSingle(10, '12345678 C'), null);
+    });
+  });
 }

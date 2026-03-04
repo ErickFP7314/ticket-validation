@@ -153,28 +153,40 @@ class _ResultsPanelState extends State<ResultsPanel> {
   }
 
   Widget _buildHeader() {
-    String statusText = "RESULTADOS";
+    String prefix = "Se detectaron ";
+    String statusLabel = "resultados";
+    String suffix = " de billetes de ";
     IconData icon = Icons.info_outline;
 
-    if (widget.provider.results.isEmpty && widget.provider.hasProcessed) {
-      statusText = "SIN HALLAZGOS";
+    final hasResults = widget.provider.results.isNotEmpty;
+    final int den = widget.provider.selectedDenomination;
+
+    if (!hasResults && widget.provider.hasProcessed) {
+      prefix = "No se detectó ";
+      statusLabel = "ningún billete";
       icon = Icons.search_off;
     } else {
       switch (widget.provider.status) {
         case ScanStatus.valid:
-          statusText = "TODOS VÁLIDOS";
+          prefix = "Todos los billetes ";
+          statusLabel = "son válidos";
+          suffix = " de ";
           icon = Icons.check_circle;
           break;
         case ScanStatus.invalid:
-          statusText = "TODOS INVÁLIDOS";
+          prefix = "Todos los billetes ";
+          statusLabel = "son inválidos";
+          suffix = " de ";
           icon = Icons.error;
           break;
         case ScanStatus.mixed:
-          statusText = "RESULTADOS MIXTOS";
+          prefix = "Se detectaron ";
+          statusLabel = "resultados mixtos";
           icon = Icons.warning;
           break;
         case ScanStatus.scanning:
-          statusText = "PROCESANDO...";
+          prefix = "Procesando ";
+          statusLabel = "billetes";
           icon = Icons.refresh;
           break;
         default:
@@ -182,7 +194,6 @@ class _ResultsPanelState extends State<ResultsPanel> {
       }
     }
 
-    final int den = widget.provider.selectedDenomination;
     final Color denColor = _getDenominationColor(den);
 
     return Padding(
@@ -195,13 +206,24 @@ class _ResultsPanelState extends State<ResultsPanel> {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
                 children: [
-                  TextSpan(text: "SE DETECTARON $statusText DE BILLETES DE "),
+                  TextSpan(text: prefix),
+                  TextSpan(
+                    text: statusLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: suffix),
                   TextSpan(
                     text: "$den BS",
-                    style: TextStyle(color: denColor, fontSize: 20, backgroundColor: Colors.black26),
+                    style: TextStyle(
+                      color: denColor, 
+                      fontSize: 20, 
+                      fontWeight: FontWeight.bold,
+                      backgroundColor: Colors.black26
+                    ),
                   ),
+                  const TextSpan(text: "."),
                 ],
               ),
             ),

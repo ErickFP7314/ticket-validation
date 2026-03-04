@@ -32,17 +32,38 @@ class BanknoteValidator {
     return results;
   }
 
-  /// Limpia un número de serie (solo dígitos) - Mantenido por compatibilidad
-  static String? cleanSerial(String text) {
-    // El nuevo flujo usa extractResults, pero dejamos esto para validaciones simples si se requiere
-    final clean = text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (clean.length < 7 || clean.length > 10) return null;
-    return clean;
+  /// Valida una entrada única (útil para entrada manual)
+  static ScanResult? validateSingle(int denomination, String text) {
+    final cleanAlphaNum = text.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toUpperCase();
+    
+    // Caso 1: Solo números (7 u 8 dígitos) -> Asumir Serie B
+    if (RegExp(r'^\d{7,8}$').hasMatch(cleanAlphaNum)) {
+      return _createResult(denomination, cleanAlphaNum, 'B');
+    }
+
+    // Caso 2: Patrón completo (Dígitos + Letra A o B)
+    final match = RegExp(r'^(\d{7,9})([AB])$').firstMatch(cleanAlphaNum);
+    if (match != null) {
+      return _createResult(denomination, match.group(1)!, match.group(2)!);
+    }
+
+    return null;
+  }
+
+  static ScanResult _createResult(int denomination, String digits, String series) {
+    final invalidRange = findInvalidRange(denomination, digits, series);
+    return ScanResult(
+      serialFull: "$digits $series",
+      serialDigits: digits,
+      seriesLetter: series,
+      isValid: invalidRange == null,
+      matchedRange: invalidRange,
+    );
   }
 
   /// Busca si el número está en un rango inválido, SOLO para Serie B
   static BanknoteRange? findInvalidRange(int denomination, String serialText, String series) {
-    if (series != 'B') return null; // Solo la Serie B tiene restricciones
+    if (series != 'B') return null; // Solo la Serie B tiene restricciones (Serie A es siempre válida)
 
     final int? serialNum = int.tryParse(serialText);
     if (serialNum == null) return null;
