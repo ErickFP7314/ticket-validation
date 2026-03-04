@@ -1,4 +1,4 @@
-import 'package:numero_serie_billetes_b/models/scan_result.dart';
+import 'package:villete/models/scan_result.dart';
 import '../../constants/banknote_data.dart';
 import '../../models/banknote_range.dart';
 

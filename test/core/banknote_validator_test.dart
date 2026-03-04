@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:numero_serie_billetes_b/core/utils/banknote_validator.dart';
-import 'package:numero_serie_billetes_b/models/scan_result.dart';
+import 'package:villete/core/utils/banknote_validator.dart';
+import 'package:villete/models/scan_result.dart';
 
 void main() {
   group('BanknoteValidator V2 Tests', () {
