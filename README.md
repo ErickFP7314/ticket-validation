@@ -4,7 +4,7 @@
 ![Dart Version](https://img.shields.io/badge/Dart-3.x-blue?style=flat-square&logo=dart)
 ![ML Kit](https://img.shields.io/badge/Google%20ML%20Kit-Text%20Recognition-red?style=flat-square)
 
-Recientemente hubo un incidente en Bolivia, un avión militar que transportaba dinero de un banco tuvo un accidente y se perdieron grandes cantidades de dinero en el proceso, varias personas recogieron ese dinero y entonces el banco para no perder dinero des-habilitó los códigos de los billetes que iban en ese avión. Sin embargo era muy difícil identificar los códigos a partir de los estándares establecidos por el ministerio de economía y finanzas de Bolivia, por lo que la solución es la siguiente:
+Recientemente hubo un incidente en Bolivia, un avión militar que transportaba dinero de un banco tuvo un accidente y se perdieron grandes cantidades de dinero en el proceso, varias personas recogieron ese dinero y entonces el banco tuvo que des-habilitar los códigos de los billetes que iban en ese avión para no perder dinero. Sin embargo era muy difícil identificar los códigos a partir de los estándares establecidos por el ministerio de economía y finanzas de Bolivia, por lo que la solución es la siguiente:
 
 Una aplicación móvil moderna y eficiente diseñada para verificar la autenticidad de los billetes del Estado Plurinacional de Bolivia (denominaciones de 10, 20 y 50 Bs) basándose en los rangos oficiales de las Series **A** y **B**.
 
