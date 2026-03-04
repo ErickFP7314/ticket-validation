@@ -13,11 +13,13 @@ class ScannerProvider with ChangeNotifier {
   int _selectedDenomination = 10;
   List<ScanResult> _results = [];
   bool _isProcessing = false;
+  bool _hasProcessed = false;
 
   ScanStatus get status => _status;
   int get selectedDenomination => _selectedDenomination;
   List<ScanResult> get results => _results;
   bool get isProcessing => _isProcessing;
+  bool get hasProcessed => _hasProcessed;
 
   void setDenomination(int den) {
     _selectedDenomination = den;
@@ -27,12 +29,14 @@ class ScannerProvider with ChangeNotifier {
   void clearResults() {
     _results = [];
     _status = ScanStatus.idle;
+    _hasProcessed = false;
     notifyListeners();
   }
 
   Future<void> scanFromImage(String path) async {
     _status = ScanStatus.scanning;
     _results = [];
+    _hasProcessed = false;
     notifyListeners();
 
     final inputImage = InputImage.fromFilePath(path);
@@ -42,6 +46,7 @@ class ScannerProvider with ChangeNotifier {
   void validateManual(String serialText) {
     // Para entrada manual, extraemos resultados del texto ingresado
     _results = BanknoteValidator.extractResults(_selectedDenomination, serialText);
+    _hasProcessed = true;
     
     _updateStatusFromResults();
     notifyListeners();
@@ -52,6 +57,7 @@ class ScannerProvider with ChangeNotifier {
 
     _isProcessing = true;
     _status = ScanStatus.scanning;
+    _hasProcessed = false;
     notifyListeners();
     
     try {
@@ -59,11 +65,13 @@ class ScannerProvider with ChangeNotifier {
       
       // Extraemos todos los resultados posibles del texto completo
       _results = BanknoteValidator.extractResults(_selectedDenomination, recognizedText.text);
+      _hasProcessed = true;
       
       _updateStatusFromResults();
     } catch (e) {
       debugPrint("Error processing image: $e");
       _status = ScanStatus.idle;
+      _hasProcessed = true;
     } finally {
       _isProcessing = false;
       notifyListeners();

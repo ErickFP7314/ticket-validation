@@ -6,12 +6,16 @@ class BanknoteValidator {
   /// Extrae todos los números de serie válidos de un texto usando el patrón [8-9 dígitos] [Letra]
   static List<ScanResult> extractResults(int denomination, String text) {
     final List<ScanResult> results = [];
-    final regex = RegExp(r'\b(\d{8,9})\s?([A-Z])\b', caseSensitive: false);
+    final regex = RegExp(r'\b(\d{8,9})\s?([A-B])\b', caseSensitive: false);
     final matches = regex.allMatches(text);
 
     for (var match in matches) {
       final digits = match.group(1)!;
       final series = match.group(2)!.toUpperCase();
+      
+      // Filtro estricto: solo A y B
+      if (series != 'A' && series != 'B') continue;
+
       final full = "$digits $series";
 
       final invalidRange = findInvalidRange(denomination, digits, series);

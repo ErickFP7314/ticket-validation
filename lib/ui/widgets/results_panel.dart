@@ -2,47 +2,139 @@ import 'package:flutter/material.dart';
 import '../../providers/scanner_provider.dart';
 import '../../models/scan_result.dart';
 
-class ResultsPanel extends StatelessWidget {
+class ResultsPanel extends StatefulWidget {
   final ScannerProvider provider;
 
   const ResultsPanel({super.key, required this.provider});
 
   @override
+  State<ResultsPanel> createState() => _ResultsPanelState();
+}
+
+class _ResultsPanelState extends State<ResultsPanel> {
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  bool _isClosing = false;
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (provider.results.isEmpty && provider.status != ScanStatus.scanning) {
+    if (!widget.provider.hasProcessed && widget.provider.status != ScanStatus.scanning) {
       return const SizedBox.shrink();
     }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.3,
-      minChildSize: 0.15,
-      maxChildSize: 0.8,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: _getPanelColor(),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-          ),
-          child: Column(
-            children: [
-              _buildHandle(),
-              _buildHeader(),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: provider.results.length,
-                  itemBuilder: (context, index) {
-                    final result = provider.results[index];
-                    return _buildResultTile(result);
-                  },
-                ),
-              ),
-              _buildActionButtons(),
-            ],
-          ),
-        );
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: (notification) {
+        // Lógica de "Snap to Close" (15% umbral)
+        if (notification.extent < 0.15 && 
+            !_isClosing && 
+            _sheetController.isAttached && 
+            widget.provider.status != ScanStatus.idle) {
+          _isClosing = true;
+          _sheetController.animateTo(
+            0.0, 
+            duration: const Duration(milliseconds: 300), 
+            curve: Curves.easeOutCubic
+          ).then((_) {
+            widget.provider.clearResults();
+            if (mounted) setState(() => _isClosing = false);
+          });
+        }
+        return true;
       },
+      child: DraggableScrollableSheet(
+        controller: _sheetController,
+        initialChildSize: 0.9,
+        minChildSize: 0.0,
+        maxChildSize: 0.9,
+        snap: true,
+        snapSizes: const [0.0, 0.9],
+        builder: (context, scrollController) {
+          return AnimatedBuilder(
+            animation: _sheetController,
+            builder: (context, child) {
+              // Si no está adjunto o el tamaño es muy pequeño al inicio, mostramos opacidad 1
+              // para evitar que parpadee o se quede oculto.
+              double opacity = 1.0;
+              if (_sheetController.isAttached) {
+                if (_isClosing) {
+                  opacity = (_sheetController.size / 0.15).clamp(0.0, 1.0);
+                }
+              }
+              
+              return Container(
+                decoration: BoxDecoration(
+                  color: _getPanelColor(),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                ),
+                child: Opacity(
+                  opacity: opacity,
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    physics: const ClampingScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildHandle()),
+                      SliverToBoxAdapter(child: _buildHeader()),
+                      if (widget.provider.results.isEmpty && widget.provider.hasProcessed)
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: _buildNoResultsMessage(),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final result = widget.provider.results[index];
+                                return _buildResultTile(result);
+                              },
+                              childCount: widget.provider.results.length,
+                            ),
+                          ),
+                        ),
+                      SliverToBoxAdapter(child: _buildActionButtons()),
+                      // Espacio extra al final para el teclado o scroll
+                      const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNoResultsMessage() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.search_off, color: Colors.white60, size: 80),
+            const SizedBox(height: 20),
+            const Text(
+              "No se detectaron billetes",
+              style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              "Verifica que el número de serie se vea con claridad, tenga buena luz y contenga su serie (A o B).",
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -61,41 +153,71 @@ class ResultsPanel extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    String title = "RESULTADOS";
+    String statusText = "RESULTADOS";
     IconData icon = Icons.info_outline;
 
-    switch (provider.status) {
-      case ScanStatus.valid:
-        title = "TODOS VÁLIDOS";
-        icon = Icons.check_circle;
-        break;
-      case ScanStatus.invalid:
-        title = "TODOS INVÁLIDOS";
-        icon = Icons.error;
-        break;
-      case ScanStatus.mixed:
-        title = "RESULTADOS MIXTOS";
-        icon = Icons.warning;
-        break;
-      case ScanStatus.scanning:
-        title = "PROCESANDO...";
-        icon = Icons.refresh;
-        break;
-      default:
-        break;
+    if (widget.provider.results.isEmpty && widget.provider.hasProcessed) {
+      statusText = "SIN HALLAZGOS";
+      icon = Icons.search_off;
+    } else {
+      switch (widget.provider.status) {
+        case ScanStatus.valid:
+          statusText = "TODOS VÁLIDOS";
+          icon = Icons.check_circle;
+          break;
+        case ScanStatus.invalid:
+          statusText = "TODOS INVÁLIDOS";
+          icon = Icons.error;
+          break;
+        case ScanStatus.mixed:
+          statusText = "RESULTADOS MIXTOS";
+          icon = Icons.warning;
+          break;
+        case ScanStatus.scanning:
+          statusText = "PROCESANDO...";
+          icon = Icons.refresh;
+          break;
+        default:
+          break;
+      }
     }
+
+    final int den = widget.provider.selectedDenomination;
+    final Color denColor = _getDenominationColor(den);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: Colors.white, size: 28),
           const SizedBox(width: 12),
-          Text(title, 
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                children: [
+                  TextSpan(text: "SE DETECTARON $statusText DE BILLETES DE "),
+                  TextSpan(
+                    text: "$den BS",
+                    style: TextStyle(color: denColor, fontSize: 20, backgroundColor: Colors.black26),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Color _getDenominationColor(int den) {
+    switch (den) {
+      case 10: return Colors.blueAccent;
+      case 20: return Colors.orangeAccent;
+      case 50: return Colors.purpleAccent;
+      default: return Colors.white;
+    }
   }
 
   Widget _buildResultTile(ScanResult result) {
@@ -131,14 +253,17 @@ class ResultsPanel extends StatelessWidget {
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 50),
         ),
-        onPressed: () => provider.clearResults(),
+        onPressed: () => widget.provider.clearResults(),
         child: const Text("LIMPIAR / NUEVO ESCANEO"),
       ),
     );
   }
 
   Color _getPanelColor() {
-    switch (provider.status) {
+    if (widget.provider.results.isEmpty && widget.provider.hasProcessed) {
+      return Colors.blueGrey[900]!;
+    }
+    switch (widget.provider.status) {
       case ScanStatus.valid: return Colors.green[800]!;
       case ScanStatus.invalid: return Colors.red[800]!;
       case ScanStatus.mixed: return Colors.orange[800]!;

@@ -19,6 +19,7 @@ class _CameraScreenState extends State<CameraScreen> {
   CameraController? _controller;
   bool _isCameraInitialized = false;
   bool _flashOn = false;
+  DateTime? _lastBackPress;
 
   @override
   void initState() {
@@ -81,49 +82,104 @@ class _CameraScreenState extends State<CameraScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Consumer<ScannerProvider>(
-        builder: (context, provider, child) {
-          Color backgroundColor = Colors.transparent;
-          if (provider.status == ScanStatus.invalid) {
-            backgroundColor = Colors.red.withOpacity(0.4);
-          } else if (provider.status == ScanStatus.valid) {
-            backgroundColor = Colors.green.withOpacity(0.3);
-          } else if (provider.status == ScanStatus.mixed) {
-            backgroundColor = Colors.orange.withOpacity(0.3);
-          } else if (provider.status == ScanStatus.scanning) {
-            backgroundColor = Colors.blue.withOpacity(0.2);
-          }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        final provider = Provider.of<ScannerProvider>(context, listen: false);
+        
+        // 1. Si hay resultados, cerramos el panel (como el botón Limpiar)
+        if (provider.results.isNotEmpty || provider.hasProcessed) {
+          provider.clearResults();
+          return;
+        }
 
-          return Stack(
-            children: [
-              Center(child: CameraPreview(_controller!)),
-              
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                color: backgroundColor,
-              ),
+        // 2. Lógica de doble toque para salir rápido
+        final now = DateTime.now();
+        if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+          return;
+        }
+        _lastBackPress = now;
 
-              if (provider.status == ScanStatus.scanning)
-                const Center(child: CircularProgressIndicator(color: Colors.white)),
+        // 3. Si no es doble toque, confirmamos salida con modal
+        final shouldExit = await _showExitConfirmation(context);
+        if (shouldExit && mounted) {
+           SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Consumer<ScannerProvider>(
+          builder: (context, provider, child) {
+            Color backgroundColor = Colors.transparent;
+            if (provider.status == ScanStatus.invalid) {
+              backgroundColor = Colors.red.withOpacity(0.4);
+            } else if (provider.status == ScanStatus.valid) {
+              backgroundColor = Colors.green.withOpacity(0.3);
+            } else if (provider.status == ScanStatus.mixed) {
+              backgroundColor = Colors.orange.withOpacity(0.3);
+            } else if (provider.status == ScanStatus.scanning) {
+              backgroundColor = Colors.blue.withOpacity(0.2);
+            }
 
-              SafeArea(
-                child: Column(
-                  children: [
-                    _buildTopBar(provider),
-                    const Spacer(),
-                    _buildBottomControls(),
-                  ],
+            return Stack(
+              children: [
+                Center(child: CameraPreview(_controller!)),
+                
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  color: backgroundColor,
                 ),
-              ),
 
-              ResultsPanel(provider: provider),
-            ],
-          );
-        },
+                if (provider.status == ScanStatus.scanning)
+                  const Center(child: CircularProgressIndicator(color: Colors.white)),
+
+                SafeArea(
+                  child: Column(
+                    children: [
+                      _buildTopBar(provider),
+                      const Spacer(),
+                      _buildBottomControls(),
+                    ],
+                  ),
+                ),
+
+                // Usamos un Key basado en el estado de procesamiento para forzar 
+                // que el widget se recree totalmente cuando empezamos un nuevo escaneo
+                if (provider.status != ScanStatus.idle || provider.hasProcessed)
+                  ResultsPanel(
+                    key: ValueKey('results_${provider.hasProcessed}_${provider.results.length}_${provider.status}'),
+                    provider: provider
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
+  }
+
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("¿Salir de la aplicación?"),
+        content: const Text("¿Estás seguro de que deseas cerrar el verificador?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("CANCELAR"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("SALIR", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   Widget _buildTopBar(ScannerProvider provider) {

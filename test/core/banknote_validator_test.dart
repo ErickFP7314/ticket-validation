@@ -46,13 +46,20 @@ void main() {
       expect(results[0].isValid, false);
     });
 
-    test('Should mark any series other than B as valid', () {
-      // 77100005 is invalid ONLY for Serie B
-      const text = "77100005 C"; 
+    test('Should ignore any series other than A or B (strict filtering)', () {
+      // Numbers with series other than A or B should be IGNORED
+      const text = "77100005 C 12345678 T 06736385 G"; 
+      final results = BanknoteValidator.extractResults(10, text);
+
+      expect(results.length, 0); // Must be ignored now
+    });
+
+    test('Should still accept Serie A as valid even with strict filtering', () {
+      const text = "12345678 A"; 
       final results = BanknoteValidator.extractResults(10, text);
 
       expect(results.length, 1);
-      expect(results[0].seriesLetter, "C");
+      expect(results[0].seriesLetter, "A");
       expect(results[0].isValid, true);
     });
   });
